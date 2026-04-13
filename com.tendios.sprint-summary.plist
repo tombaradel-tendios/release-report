@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.tendios.sprint-summary</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <!-- Adjust path if npx is elsewhere: `which npx` -->
+    <string>/usr/local/bin/npx</string>
+    <string>tsx</string>
+    <string>/Users/thomasbaradel/Test/ClaudePRG/sprint-summary/src/index.ts</string>
+  </array>
+
+  <!-- Run every Monday at 10:00 -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key>
+    <integer>1</integer>
+    <key>Hour</key>
+    <integer>10</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>JIRA_EMAIL</key>
+    <string>thomas.baradel@tendios.com</string>
+    <key>JIRA_API_TOKEN</key>
+    <string>REPLACE_WITH_YOUR_JIRA_API_TOKEN</string>
+    <key>SLACK_BOT_TOKEN</key>
+    <string>REPLACE_WITH_YOUR_SLACK_BOT_TOKEN</string>
+    <key>ANTHROPIC_API_KEY</key>
+    <string>REPLACE_WITH_YOUR_ANTHROPIC_API_KEY</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/sprint-summary.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/sprint-summary.err</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>
