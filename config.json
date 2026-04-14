@@ -10,5 +10,9 @@
   {
     "jiraProject": "TCO",
     "slackChannel": "C0ASAJ14E23"
+  },
+  {
+    "jiraProject": "TD",
+    "slackChannel": "C0ASCQVKVHV"
   }
 ]
