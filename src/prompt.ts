@@ -40,7 +40,7 @@ function getLinkedKey(bug: JiraIssue): string | null {
 function buildBugSection(bugs: JiraIssue[]): string {
   const lines = bugs.map(b => {
     const linked = getLinkedKey(b);
-    const suffix = linked ? ` _(${linked})_` : "";
+    const suffix = linked ? ` _(<${JIRA_BASE_URL}/browse/${linked}|${linked}>)_` : "";
     return `• <${JIRA_BASE_URL}/browse/${b.key}|${b.key}> ${unescapeHtml(b.fields.summary)}${suffix}`;
   });
   return `\n\n---\n*Resolved Bugs (${bugs.length})*\n` + (lines.length ? lines.join("\n") : "_None_");
