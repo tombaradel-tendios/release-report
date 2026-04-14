@@ -27,14 +27,15 @@ async function processTarget(
   target: TargetConfig,
   jira: ReturnType<typeof makeJiraClient>,
   slack: ReturnType<typeof makeSlackClient>,
-  anthropicKey: string
+  anthropicKey: string,
+  dryRun: boolean
 ): Promise<void> {
   console.log(`\n── Project: ${target.jiraProject} ──`);
 
   const release = await getLatestRelease(jira, target.jiraProject);
   console.log(`  Latest release: ${release.name} (${release.releaseDate})`);
 
-  if (getLastPostedRelease(target.jiraProject) === release.name) {
+  if (!dryRun && getLastPostedRelease(target.jiraProject) === release.name) {
     console.log(`  Already posted release ${release.name} — skipping.`);
     return;
   }
@@ -44,9 +45,16 @@ async function processTarget(
   console.log(`  Issues: ${issues.length} (${bugCount} bugs)`);
 
   const summary = await generateSummary(anthropicKey, release, issues);
+
+  if (dryRun) {
+    console.log("\n─── DRY RUN OUTPUT ───────────────────────────────────────\n");
+    console.log(summary);
+    console.log("\n──────────────────────────────────────────────────────────");
+    return;
+  }
+
   const ts = await slack.postMessage(target.slackChannel, summary);
   console.log(`  Posted to #${target.slackChannel} (ts=${ts})`);
-
   saveLastPostedRelease(target.jiraProject, release.name);
 }
 
@@ -56,12 +64,13 @@ async function main(): Promise<void> {
   const anthropicKey = requireEnv("ANTHROPIC_API_KEY");
 
   const projectFilter = process.argv.find(a => a.startsWith("--project="))?.split("=")[1];
+  const dryRun = process.argv.includes("--dry-run");
   const targets = loadTargets(projectFilter);
 
-  console.log(`Running for ${targets.length} target(s)${projectFilter ? ` (filtered: ${projectFilter})` : ""}…`);
+  console.log(`Running for ${targets.length} target(s)${projectFilter ? ` (filtered: ${projectFilter})` : ""}${dryRun ? " [DRY RUN]" : ""}…`);
 
   for (const target of targets) {
-    await processTarget(target, jira, slack, anthropicKey);
+    await processTarget(target, jira, slack, anthropicKey, dryRun);
   }
 
   console.log("\nDone.");

@@ -34,7 +34,7 @@ export async function getReleaseIssues(client: JiraClient, jiraProject: string, 
   const jql = `project = ${jiraProject} AND fixVersion = "${release.name}" ORDER BY issuetype ASC`;
   const data = await client.get<{ issues: JiraIssue[]; total: number }>("/rest/api/3/search/jql", {
     jql,
-    fields: "summary,issuetype,assignee",
+    fields: "summary,issuetype,assignee,issuelinks",
     maxResults: 200,
   });
   if (data.total > 200) console.warn(`⚠️  ${data.total} issues — only first 200 included.`);

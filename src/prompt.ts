@@ -29,10 +29,20 @@ Write a concise narrative summary in English (3–5 short paragraphs).
 - Do NOT add a header line — start directly with the narrative text.`;
 }
 
+function getLinkedKey(bug: JiraIssue): string | null {
+  for (const link of bug.fields.issuelinks ?? []) {
+    const linked = link.inwardIssue ?? link.outwardIssue;
+    if (linked) return linked.key;
+  }
+  return null;
+}
+
 function buildBugSection(bugs: JiraIssue[]): string {
-  const lines = bugs.map(
-    b => `• <${JIRA_BASE_URL}/browse/${b.key}|${b.key}> ${unescapeHtml(b.fields.summary)}`
-  );
+  const lines = bugs.map(b => {
+    const linked = getLinkedKey(b);
+    const suffix = linked ? ` _(${linked})_` : "";
+    return `• <${JIRA_BASE_URL}/browse/${b.key}|${b.key}> ${unescapeHtml(b.fields.summary)}${suffix}`;
+  });
   return `\n\n---\n*Resolved Bugs (${bugs.length})*\n` + (lines.length ? lines.join("\n") : "_None_");
 }
 
