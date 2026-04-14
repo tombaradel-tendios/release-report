@@ -6,5 +6,9 @@
   {
     "jiraProject": "PC",
     "slackChannel": "C0ASE6SQ7MZ"
+  },
+  {
+    "jiraProject": "TCO",
+    "slackChannel": "C0ASAJ14E23"
   }
 ]
