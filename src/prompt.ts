@@ -50,13 +50,26 @@ export async function generateSummary(apiKey: string, release: ReleaseInfo, issu
   const bugs = issues.filter(i => i.fields.issuetype.name === "Bug");
 
   const client = new Anthropic({ apiKey });
-  const message = await client.messages.create({
-    model: "claude-opus-4-6",
-    max_tokens: 1024,
+  const message = await client.beta.messages.create({
+    model: "claude-opus-5",
+    max_tokens: 16000,
+    betas: ["server-side-fallback-2026-07-01"],
+    fallbacks: "default",
     messages: [{ role: "user", content: buildPrompt(release, issues) }],
   });
 
-  const narrative = toSlackMrkdwn((message.content[0] as { text: string }).text.trim());
+  if (message.stop_reason === "refusal") {
+    throw new Error(`Claude declined to summarize release ${release.name}: ${message.stop_details?.explanation ?? "no details"}`);
+  }
+
+  const text = message.content
+    .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
+    .map(b => b.text)
+    .join("")
+    .trim();
+  if (!text) throw new Error(`Claude returned no text for release ${release.name}`);
+
+  const narrative = toSlackMrkdwn(text);
 
   return `*Release ${release.name} · ${release.releaseDate}*\n\n${narrative}${buildBugSection(bugs)}`;
 }

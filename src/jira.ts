@@ -32,11 +32,17 @@ export async function getLatestRelease(client: JiraClient, jiraProject: string):
 
 export async function getReleaseIssues(client: JiraClient, jiraProject: string, release: ReleaseInfo): Promise<JiraIssue[]> {
   const jql = `project = ${jiraProject} AND fixVersion = "${release.name}" ORDER BY issuetype ASC`;
-  const data = await client.get<{ issues: JiraIssue[]; total: number }>("/rest/api/3/search/jql", {
-    jql,
-    fields: "summary,issuetype,assignee,issuelinks",
-    maxResults: 200,
-  });
-  if (data.total > 200) console.warn(`⚠️  ${data.total} issues — only first 200 included.`);
-  return data.issues;
+  const issues: JiraIssue[] = [];
+  let nextPageToken: string | undefined;
+  do {
+    const page = await client.get<{ issues: JiraIssue[]; nextPageToken?: string; isLast?: boolean }>("/rest/api/3/search/jql", {
+      jql,
+      fields: "summary,issuetype,assignee,issuelinks",
+      maxResults: 100,
+      ...(nextPageToken ? { nextPageToken } : {}),
+    });
+    issues.push(...page.issues);
+    nextPageToken = page.isLast ? undefined : page.nextPageToken;
+  } while (nextPageToken);
+  return issues;
 }

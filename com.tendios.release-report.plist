@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.tendios.release-report</string>
+
+  <!-- launchd has no shell PATH, so use absolute paths. Adjust node path if needed: `which node` -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/thomasbaradel/.nvm/versions/node/v24.14.0/bin/node</string>
+    <string>/Users/thomasbaradel/Projects/release-report/node_modules/tsx/dist/cli.mjs</string>
+    <string>src/index.ts</string>
+  </array>
+
+  <!-- config.json, .env and last-release-*.json are resolved relative to this directory -->
+  <key>WorkingDirectory</key>
+  <string>/Users/thomasbaradel/Projects/release-report</string>
+
+  <!-- Run every Monday at 10:00 -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key>
+    <integer>1</integer>
+    <key>Hour</key>
+    <integer>10</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/release-report.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/release-report.err</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>

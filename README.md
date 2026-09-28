@@ -61,10 +61,7 @@ You can add as many targets as needed. Each project tracks its own state indepen
 Your Slack app needs the following bot token scopes:
 
 - `chat:write` — post messages
-- `chat:write.public` — post to channels the bot hasn't joined
-- `channels:history` — read channel history (for cleanup)
-- `channels:read` — list channels
-- `channels:join` — join public channels
+- `chat:write.public` — post to public channels the bot hasn't joined (for private channels, invite the bot instead)
 
 ## Usage
 
@@ -80,19 +77,28 @@ npm start
 npm start -- --project=TB
 ```
 
+### Preview without posting
+
+```bash
+npm start -- --dry-run
+npm start -- --project=TB --dry-run
+```
+
+Prints the generated message instead of posting it. Dry runs ignore and don't update the saved state, so you can preview a release that was already posted.
+
 ### Schedule (macOS)
 
-A `launchd` plist is included to run the script automatically every Monday at 10:00.
+A `launchd` plist is included to run the script automatically every Monday at 10:00. Credentials are read from `.env` in the project directory.
 
-1. Fill in your credentials in `com.tendios.sprint-summary.plist`
+1. Check the `node` path and project paths in `com.tendios.release-report.plist` match your machine
 2. Register it with launchd:
 
 ```bash
-cp com.tendios.sprint-summary.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.tendios.sprint-summary.plist
+cp com.tendios.release-report.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.tendios.release-report.plist
 ```
 
-Logs are written to `/tmp/sprint-summary.log` and `/tmp/sprint-summary.err`.
+Logs are written to `/tmp/release-report.log` and `/tmp/release-report.err`.
 
 ## Project structure
 
