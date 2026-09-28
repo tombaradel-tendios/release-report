@@ -2,6 +2,9 @@ import type { ReleaseInfo, JiraIssue } from "./types.js";
 
 const JIRA_BASE_URL = "https://tendios.atlassian.net";
 
+// Xray test-management issue types — not product work, excluded from release summaries
+const XRAY_ISSUE_TYPES = new Set(["Test", "Test Execution", "Precondition", "Test Set", "Test Plan"]);
+
 function makeJiraClient(email: string, apiToken: string) {
   const auth = Buffer.from(`${email}:${apiToken}`).toString("base64");
 
@@ -44,5 +47,5 @@ export async function getReleaseIssues(client: JiraClient, jiraProject: string, 
     issues.push(...page.issues);
     nextPageToken = page.isLast ? undefined : page.nextPageToken;
   } while (nextPageToken);
-  return issues;
+  return issues.filter(i => !XRAY_ISSUE_TYPES.has(i.fields.issuetype.name));
 }
