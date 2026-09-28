@@ -11,6 +11,7 @@ function buildPrompt(release: ReleaseInfo, issues: JiraIssue[]): string {
     const assignee = i.fields.assignee?.displayName ?? "Unassigned";
     return `[${i.key}] (${i.fields.issuetype.name}) ${unescapeHtml(i.fields.summary)} — ${assignee}`;
   });
+  const bugLines = bugs.map(b => `[${b.key}] ${unescapeHtml(b.fields.summary)}`);
 
   return `You are writing an internal release summary for an engineering team at a B2B SaaS company.
 
@@ -20,13 +21,25 @@ Total tickets: ${issues.length} (${bugs.length} bugs resolved, ${nonBugs.length}
 Non-bug tickets:
 ${ticketLines.join("\n")}
 
-Write a concise narrative summary in English (3–5 short paragraphs).
-- Use Slack mrkdwn formatting: *bold* (single asterisk), _italic_ — never **double asterisks**.
+Bugs fixed (for the "business" text only):
+${bugLines.length ? bugLines.join("\n") : "(none)"}
+
+Write two texts in English, both using Slack mrkdwn formatting: *bold* (single asterisk), _italic_ — never **double asterisks**.
+
+"narrative" — a concise summary for the engineering team (3–5 short paragraphs):
 - Group by theme: features, infrastructure, QA, etc.
 - Mention team members by first name when relevant.
 - Keep tone positive and factual.
-- Do NOT include the bug list (it will be appended separately).
-- Do NOT add a header line — start directly with the narrative text.`;
+- Do NOT describe the bugs — they are listed separately below the narrative.
+- Do NOT add a header line — start directly with the narrative text.
+
+"business" — one short paragraph (2–4 sentences) for non-technical colleagues (sales, customer success, management):
+- Say what customers can now do or what got better for them, in plain language.
+- Mention notable customer-facing bug fixes if there are any.
+- No ticket keys, no people's names, no technical jargon (no N+1, feature flags, workers, APIs, etc.).
+- If the release is purely internal/technical, say so in one sentence.
+
+Both fields are required and must be non-empty.`;
 }
 
 function getLinkedKey(bug: JiraIssue): string | null {
@@ -56,6 +69,20 @@ export async function generateSummary(apiKey: string, release: ReleaseInfo, issu
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
     messages: [{ role: "user", content: buildPrompt(release, issues) }],
+    output_config: {
+      format: {
+        type: "json_schema",
+        schema: {
+          type: "object",
+          properties: {
+            narrative: { type: "string", description: "Engineering-team release summary, 3–5 short paragraphs" },
+            business: { type: "string", description: "Plain-language paragraph for non-technical colleagues, 2–4 sentences" },
+          },
+          required: ["narrative", "business"],
+          additionalProperties: false,
+        },
+      },
+    },
   });
 
   if (message.stop_reason === "refusal") {
@@ -69,7 +96,12 @@ export async function generateSummary(apiKey: string, release: ReleaseInfo, issu
     .trim();
   if (!text) throw new Error(`Claude returned no text for release ${release.name}`);
 
-  const narrative = toSlackMrkdwn(text);
+  const output = JSON.parse(text) as { narrative: string; business: string };
+  const narrative = toSlackMrkdwn(output.narrative.trim());
+  const business  = toSlackMrkdwn(output.business.trim());
 
-  return `*Release ${release.name} · ${release.releaseDate}*\n\n${narrative}${buildBugSection(bugs)}`;
+  if (!business) console.warn(`  ⚠️  Claude returned an empty business summary — section omitted.`);
+  const businessSection = business ? `\n\n---\n*In short, for the business*\n${business}` : "";
+
+  return `*Release ${release.name} · ${release.releaseDate}*\n\n${narrative}${buildBugSection(bugs)}${businessSection}`;
 }
